@@ -12,7 +12,7 @@ class Logger:
         log_interval: int = 1,
         step_bias: int = 0,
         reduction: str = "last",
-        title: tuple[str] = ("iteration", "value"),
+        title: tuple[str, str] = ("iteration", "value"),
     ):
         """
         :param log_interval: in steps
@@ -51,12 +51,21 @@ class Logger:
         self.current_values = []
         self.tb_writer.flush()
 
-    def step(self, value: float) -> None:
+    def step(self, value: float) -> float:
+        """
+        Returns given value.
+        """
+
         self.current_step += 1
         self.current_values.append(value)
 
         if self.current_step % self.log_interval == 0:
             self.reset()
+
+        return value
+
+    def add_step_bias(self, value: int) -> None:
+        self.step_bias += value
 
     def __del__(self):
         self.tb_writer.close()

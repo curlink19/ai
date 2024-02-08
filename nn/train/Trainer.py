@@ -1,4 +1,5 @@
 import torch
+from typing import Optional
 
 from nn.configs.TrainConfig import TrainConfig
 
@@ -16,6 +17,18 @@ class Trainer:
         """
         raise NotImplementedError
 
+    def get_loss(self, predicted, target) -> float:
+        """
+        Just returns loss.
+        """
+        raise NotImplementedError
+
+    def end_epoch(self) -> None:
+        """
+        Update internal state after epoch.
+        """
+        raise NotImplementedError
+
 
 class DefaultTrainer(Trainer):
     def __init__(
@@ -23,6 +36,7 @@ class DefaultTrainer(Trainer):
         optimizer: torch.optim.Optimizer,
         loss_fn: torch.nn.Module,
         config: TrainConfig,
+        scheduler: Optional[torch.optim.lr_scheduler] = None,
     ):
         """
         Default trainer with the ability to accumulate batches.
@@ -31,6 +45,7 @@ class DefaultTrainer(Trainer):
         self.optimizer = optimizer
         self.optimizer.zero_grad()
 
+        self.scheduler = scheduler
         self.loss_fn = loss_fn
         self.steps_accumulated = config.batches_accumulated
         self.batch_size: int = config.batch_size
@@ -59,4 +74,21 @@ class DefaultTrainer(Trainer):
         if self.steps_accumulated == 1:
             return loss.item()
         else:
+            return loss.item() * self.steps_accumulated
+
+    @torch.no_grad()
+    def get_loss(self, predicted, target) -> float:
+        loss = self.loss_fn(predicted, target)
+
+        if self.steps_accumulated == 1:
+            return loss.item()
+        else:
             return loss.item() / self.batch_size
+
+    def end_epoch(self) -> None:
+        self.current_step = 0
+
+        if self.scheduler is not None:
+            self.scheduler.step()
+
+        self.optimizer.zero_grad()

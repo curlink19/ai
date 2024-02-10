@@ -1,8 +1,8 @@
 from torch.utils.data import Dataset, DataLoader
 from torch import nn
 
-from nn.train.Trainer import Trainer
-from nn.configs.TrainConfig import TrainConfig
+from nn.train.trainers import Trainer
+from nn.configs.train_configs import TrainConfig
 from nn.data.utils import random_split_dataset, to_device
 from utils.Logger import Logger
 from utils.utils import clear_dir, pack, eval_no_grad

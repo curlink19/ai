@@ -3,6 +3,7 @@ import shutil
 import torch
 from functools import wraps
 from torch import nn
+import numpy as np
 
 
 def clear_dir(path: str):
@@ -32,3 +33,25 @@ def eval_no_grad(func):
             return func(model, *args, **kwargs)
 
     return wrapper
+
+
+def to_numpy(x):
+    """
+    First, it will try to convert x to list.
+
+    If x[0] is List, converts x[i] to numpy array
+    Else, if x is List, converts x to numpy array
+    """
+
+    try:
+        x = list(x)
+    finally:
+        pass
+
+    if isinstance(x[0], list):
+        return [np.array(val) for val in x]
+
+    if isinstance(x, list):
+        return np.array(x)
+
+    return x

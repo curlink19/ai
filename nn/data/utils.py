@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import random_split, Dataset, DataLoader
-from nn.configs.TrainConfig import TrainConfig
+from nn.configs.train_configs import TrainConfig
 
 
 def random_split_dataset(

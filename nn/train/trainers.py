@@ -1,7 +1,7 @@
 import torch
 from typing import Optional
 
-from nn.configs.TrainConfig import TrainConfig
+from nn.configs.train_configs import TrainConfig
 
 
 class Trainer:

@@ -1,3 +1,5 @@
 torch
 dataclasses
 typing
+transformers
+numpy

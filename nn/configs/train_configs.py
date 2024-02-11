@@ -12,7 +12,7 @@ class TrainConfig:
     valid_share: float = 0.2
     device: torch.device = torch.device("cuda:0")
 
-    log_dir: str = get_global_variable("log_dir")
+    log_dir: str = get_global_variable("log_dir", str)
     text_logs: bool = False
     log_interval: int = 1
 

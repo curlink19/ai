@@ -1,3 +1,4 @@
+from typing import Iterable, Any, List
 import torch
 from torch.utils.data import random_split, Dataset, DataLoader
 from nn.configs.train_configs import TrainConfig
@@ -21,9 +22,13 @@ def random_split_dataset(
     return train_data, valid_data
 
 
-def to_device(device: torch.device, *tensors) -> None:
-    for x in tensors:
-        if isinstance(x, (list, tuple)):
-            to_device(device, *x)
-        else:
-            x.to(device)
+def to_device(device: torch.device, tensors: Any) -> Any:
+    """
+    While for modules .to(device) is inplace, it is not correct for Tensors.
+    """
+    if isinstance(tensors, (list, tuple)):
+        result = []
+        for tensor in tensors:
+            result.append(tensor.to(device))
+        return result
+    return tensors.to(device)

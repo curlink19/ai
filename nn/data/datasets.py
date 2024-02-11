@@ -1,5 +1,7 @@
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Iterable
 from torch.utils.data import Dataset
+from datasets import load_dataset
+import random
 
 from nn.data.preprocessors import Preprocessor
 from nn.models.tokenizers import Tokenizer
@@ -48,6 +50,12 @@ class ListDataset(Dataset):
     def __getitem__(self, idx: int) -> Any:
         return self.array[idx]
 
+    def clip(self, length: int, shuffle=True) -> None:
+        if shuffle:
+            random.shuffle(self.array)
+
+        self.array = self.array[:length]
+
 
 class MergedDataset(Dataset):
     def __init__(self, array: List[Dataset]):
@@ -58,3 +66,39 @@ class MergedDataset(Dataset):
 
     def __getitem__(self, idx: int) -> Tuple[Any, ...]:
         return tuple(x[idx] for x in self.array)
+
+
+class HuggingFaceDictDataset(Dataset):
+    def __init__(self, name: str, target_column: str, length: int = None):
+        self.dataset = load_dataset(name, split="train")
+        self.target_column = target_column
+
+        if length is not None:
+            self.length = length
+        else:
+            self.length = len(self.dataset)
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, idx: int) -> Any:
+        return self.dataset[idx][self.target_column]
+
+
+def merge_datasets(datasets: Iterable[Dataset], shuffle=True) -> ListDataset:
+    array = []
+    for dataset in datasets:
+        for i in range(len(dataset)):
+            array.append(dataset[i])
+
+    if shuffle:
+        random.shuffle(array)
+
+    return ListDataset(array)
+
+
+def to_list_dataset(dataset: Dataset) -> ListDataset:
+    array = []
+    for i in range(len(dataset)):
+        array.append(dataset[i])
+    return ListDataset(array)

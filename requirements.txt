@@ -3,3 +3,7 @@ dataclasses
 typing
 transformers
 numpy
+tensorboard
+datasets
+zstandard
+jsonlines

@@ -6,7 +6,7 @@ from utils.globals import get_global_variable
 class Logger:
     def __init__(
         self,
-        log_dir=get_global_variable("log_dir"),
+        log_dir=get_global_variable("log_dir", str),
         group: str = None,
         text_logs: bool = False,
         log_interval: int = 1,

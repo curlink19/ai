@@ -19,8 +19,11 @@ def train_one_epoch(
 
     total_loss = 0.0
     for i, (X, y) in enumerate(dataloader):
-        to_device(model.device, X, y)
-        total_loss += logger.step(trainer.step(model(*pack(X)), y))
+        X = pack(X)
+        X = to_device(model.device, X)
+        y = to_device(model.device, y)
+
+        total_loss += logger.step(trainer.step(model(*X), y))
 
     trainer.end_epoch()
 
@@ -37,8 +40,11 @@ def compute_avg_loss(
 
     total_loss = 0.0
     for i, (X, y) in enumerate(dataloader):
-        to_device(model.device, X, y)
-        total_loss += trainer.get_loss(model(*pack(X)), y)
+        X = pack(X)
+        X = to_device(model.device, X)
+        y = to_device(model.device, y)
+
+        total_loss += trainer.get_loss(model(*X), y)
 
     return total_loss / len(dataloader)
 

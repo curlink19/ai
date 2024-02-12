@@ -7,3 +7,4 @@ tensorboard
 datasets
 zstandard
 jsonlines
+gigachat

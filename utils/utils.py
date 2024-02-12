@@ -3,6 +3,7 @@ import shutil
 import torch
 from functools import wraps
 from torch import nn
+from torch.utils.data import default_collate
 import numpy as np
 
 
@@ -11,7 +12,10 @@ def clear_dir(path: str):
     os.mkdir(path)
 
 
-def pack(x):
+def pack(x, collate=False):
+    if collate:
+        x = default_collate([x])
+
     if isinstance(x, (list, tuple)):
         return x
     else:

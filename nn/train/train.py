@@ -1,8 +1,9 @@
-from torch.utils.data import Dataset, DataLoader
+from typing import Union
+from torch.utils.data import Dataset, DataLoader, IterableDataset
 from torch import nn
 
 from nn.train.trainers import Trainer
-from nn.configs.train_configs import TrainConfig
+from nn.configs.train_configs import TrainConfig, SelfTrainConfig
 from nn.data.utils import random_split_dataset, to_device
 from utils.Logger import Logger
 from utils.utils import clear_dir, pack, eval_no_grad
@@ -50,8 +51,14 @@ def compute_avg_loss(
 
 
 def train(
-    model: nn.Module, dataset: Dataset, config: TrainConfig, trainer: Trainer
+    model: nn.Module,
+    dataset: Union[Dataset, IterableDataset],
+    config: TrainConfig,
+    trainer: Trainer,
 ) -> None:
+    if isinstance(dataset, IterableDataset):
+        assert config.valid_share == None, "no valid for online-styled datasets"
+
     train_loader, valid_loader = random_split_dataset(dataset, config, to_loaders=True)
     model.to(config.device)
 
@@ -88,4 +95,5 @@ def train(
         train_epoch_logger.step(
             train_one_epoch(model, train_loader, trainer, train_step_logger)
         )
-        valid_epoch_logger.step(compute_avg_loss(model, valid_loader, trainer))
+        if config.valid_share is not None:
+            valid_epoch_logger.step(compute_avg_loss(model, valid_loader, trainer))

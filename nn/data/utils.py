@@ -1,12 +1,25 @@
-from typing import Iterable, Any, List
+from typing import Iterable, Any, List, Union
 import torch
-from torch.utils.data import random_split, Dataset, DataLoader
+from torch.utils.data import random_split, Dataset, DataLoader, IterableDataset
 from nn.configs.train_configs import TrainConfig
 
 
 def random_split_dataset(
-    dataset: Dataset, config: TrainConfig, to_loaders: bool = False
+    dataset: Union[IterableDataset, Dataset],
+    config: TrainConfig,
+    to_loaders: bool = False,
 ):
+    if config.valid_share is None:
+        if to_loaders:
+            return (
+                DataLoader(
+                    dataset, batch_size=config.batch_size, shuffle=True, drop_last=True
+                ),
+                None,
+            )
+        else:
+            return dataset, None
+
     train_data, valid_data = random_split(
         dataset, [1 - config.valid_share, config.valid_share]
     )

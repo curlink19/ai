@@ -49,6 +49,7 @@ class DefaultTrainer(Trainer):
         self.loss_fn = loss_fn
         self.steps_accumulated = config.batches_accumulated
         self.batch_size: int = config.batch_size
+        self.max_step: Optional[int] = config.steps
         self.current_step: int = 0
 
         if self.steps_accumulated == 1:
@@ -64,6 +65,12 @@ class DefaultTrainer(Trainer):
 
     def step(self, predicted, target) -> float:
         self.current_step += 1
+
+        if (
+            self.max_step is not None
+            and self.current_step > self.max_step * self.steps_accumulated
+        ):
+            raise StopIteration
 
         loss = self.loss_fn(predicted, target) * self.factor
         loss.backward()

@@ -7,6 +7,8 @@ from utils.globals import get_global_variable
 @dataclass(frozen=True)
 class TrainConfig:
     epochs: int = None
+    steps: int = None
+
     batch_size: int = None
     batches_accumulated: int = None
     valid_share: float = 0.2

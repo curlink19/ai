@@ -115,9 +115,12 @@ def train(
         valid_ensemble._generate_dataloaders(config)  # noqa here it is legal
 
     for epoch in range(1, config.epochs + 1):
-        train_epoch_logger.step(
-            train_one_epoch(model, train_loader, trainer, train_step_logger)
-        )
+        try:
+            train_epoch_logger.step(
+                train_one_epoch(model, train_loader, trainer, train_step_logger)
+            )
+        except StopIteration:
+            break
 
         if config.valid_share is not None:
             valid_epoch_logger.step(compute_avg_loss(model, valid_loader, trainer))

@@ -100,6 +100,21 @@ class ApplyTokenizer(Dataset):
         return self.tokenizer(self.dataset[idx])
 
 
+class ApplyTokenizerToTupleElement(Dataset):
+    def __init__(self, dataset: Dataset, tokenizer: Tokenizer, index: int):
+        self.dataset = dataset
+        self.tokenizer = tokenizer
+        self.index = index
+
+    def __len__(self):
+        return len(self.dataset)  # noqa, must be implemented
+
+    def __getitem__(self, idx: int) -> Any:
+        x = list(self.dataset[idx])
+        x[self.index] = self.tokenizer(x[self.index])
+        return x
+
+
 class ListDataset(Dataset):
     def __init__(self, array: List[Any]):
         super(Dataset).__init__()
@@ -127,7 +142,7 @@ class MergedDataset(Dataset):
         self.array = array
 
     def __len__(self):
-        return min(len(x) for x in self.array)  # noqa
+        return min(len(x) for x in self.array)  # noqa, must be implemented
 
     def __getitem__(self, idx: int) -> Tuple[Any, ...]:
         return tuple(x[idx] for x in self.array)
@@ -154,6 +169,24 @@ class HuggingFaceDictDataset(Dataset):
         if isinstance(self.target_columns, list):
             return tuple(self.dataset[idx][col] for col in self.target_columns)
         return self.dataset[idx][self.target_columns]
+
+
+class SequentialDataset(Dataset):
+    def __init__(self, datasets: list[Dataset]):
+        self.datasets = datasets
+
+    def __len__(self):
+        return sum(
+            len(dataset) for dataset in self.datasets  # noqa, must be implemented
+        )  # noqa, must be implemented
+
+    def __getitem__(self, idx: int) -> Any:
+        for dataset in self.datasets:
+            if idx < len(dataset):  # noqa, must be implemented
+                return dataset[idx]
+            else:
+                idx -= len(dataset)  # noqa, must be implemented
+        assert False, "idx is too great"
 
 
 def merge_datasets(

@@ -28,3 +28,8 @@ def parse_json_dict(path: str, target_features: Union[list[str], str]) -> list[A
             else:
                 result.append(tuple(element[x] for x in target_features))
     return result
+
+
+def parse_with_separator(path: str, sep: str):
+    with open(path) as f:
+        return f.read().split(sep=sep)

@@ -5,6 +5,7 @@ from functools import wraps
 from torch import nn
 from torch.utils.data import default_collate
 import numpy as np
+import gc
 
 
 def clear_dir(path: str):
@@ -59,3 +60,41 @@ def to_numpy(x):
         return np.array(x)
 
     return x
+
+
+def gc_after(func):
+    """
+    Invokes gc.collect() after func
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        func(*args, **kwargs)
+        gc.collect()
+
+    return wrapper
+
+
+def gc_before(func):
+    """
+    Invokes gc.collect() before func
+    """
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        gc.collect()
+        func(*args, **kwargs)
+
+    return wrapper
+
+
+def all_occurrences_generator(text: str, substr: str):
+    """
+    No overlaps.
+    """
+    current = 0
+    while current != -1:
+        current = text.find(substr, current)
+        if current != -1:
+            yield current
+            current += len(substr)

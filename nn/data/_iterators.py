@@ -8,8 +8,8 @@ class ApplyFilterIterator:
         self.filter = filter
         self.current = 0
 
-    def next(self):
-        for i in range(len(self.dataset) - current):  # noqa must be implemented
+    def __next__(self):
+        for i in range(len(self.dataset) - self.current):  # noqa must be implemented
             value = self.dataset[self.current + i]
             if self.filter(value):
                 self.current += i + 1

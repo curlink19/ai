@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from typing import Any, List, Tuple, Iterable, Union
+from typing import Any, List, Tuple, Iterable, Union, Optional
 from torch.utils.data import Dataset, IterableDataset
 from datasets import load_dataset  # noqa name troubles, be accurate
 import random
@@ -9,12 +9,13 @@ from nn.data.preprocessors import Preprocessor
 from nn.data.filters import Filter
 from nn.models.tokenizers import Tokenizer
 from nn.models.utils import evaluate
-from nn.data.utils import to_device
+from nn.data.utils import to_device, is_dataset, is_iterable_dataset
 from nn.data._iterators import ApplyFilterIterator
+from utils.utils import gc_after
 
 
 class ApplyFilter(IterableDataset):
-    def __init__(self, dataset: Dataset, filter: Filter):
+    def __init__(self, dataset: Dataset, filter: Filter):  # noqa normal name
         super(IterableDataset).__init__()
 
         self.dataset = dataset
@@ -73,16 +74,29 @@ class ApplyPreprocessors(Dataset):
 
 
 class ApplyTokenizer(Dataset):
-    def __init__(self, dataset: Dataset, tokenizer: Tokenizer):
+    """
+    Tokenizing may be slow.
+    """
+
+    def __init__(
+        self,
+        dataset: Dataset,
+        tokenizer: Tokenizer,
+        log_interval: Optional[int] = None,
+    ):
         super(Dataset).__init__()
 
         self.dataset = dataset
         self.tokenizer = tokenizer
+        self.log_interval = log_interval
 
     def __len__(self):
         return len(self.dataset)  # noqa, must be implemented
 
     def __getitem__(self, idx: int) -> Any:
+        if self.log_interval is not None and idx % self.log_interval == 0:
+            print(f"{idx}")
+
         return self.tokenizer(self.dataset[idx])
 
 
@@ -98,6 +112,7 @@ class ListDataset(Dataset):
     def __getitem__(self, idx: int) -> Any:
         return self.array[idx]
 
+    @gc_after
     def clip(self, length: int, shuffle=True) -> None:
         if shuffle:
             random.shuffle(self.array)
@@ -141,11 +156,13 @@ class HuggingFaceDictDataset(Dataset):
         return self.dataset[idx][self.target_columns]
 
 
-def merge_datasets(datasets: Iterable[Dataset], shuffle=True) -> ListDataset:
+def merge_datasets(
+    datasets: Iterable[Union[Dataset, IterableDataset]], shuffle=True
+) -> ListDataset:
     array = []
+
     for dataset in datasets:
-        for i in range(len(dataset)):  # noqa must be implemented
-            array.append(dataset[i])
+        array.extend(to_list_dataset(dataset).array)
 
     if shuffle:
         random.shuffle(array)
@@ -153,8 +170,21 @@ def merge_datasets(datasets: Iterable[Dataset], shuffle=True) -> ListDataset:
     return ListDataset(array)
 
 
-def to_list_dataset(dataset: Dataset) -> ListDataset:
+def to_list_dataset(dataset: Union[IterableDataset, Dataset]) -> ListDataset:
     array = []
-    for i in range(len(dataset)):  # noqa must be implemented
-        array.append(dataset[i])
+
+    if is_dataset(dataset):
+        for i in range(len(dataset)):  # noqa must be implemented
+            array.append(dataset[i])
+    else:
+        assert is_iterable_dataset(dataset)
+        for x in dataset:
+            array.append(x)
+
     return ListDataset(array)
+
+
+def spawn_clones(dataset: Union[IterableDataset, Dataset], times: int) -> ListDataset:
+    dataset = to_list_dataset(dataset)
+    dataset.array = dataset.array * times
+    return dataset

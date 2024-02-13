@@ -8,3 +8,4 @@ datasets
 zstandard
 jsonlines
 gigachat
+matplotlib

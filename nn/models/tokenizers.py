@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from transformers.models.bert.tokenization_bert import BertTokenizer
 
 from utils.utils import to_numpy
@@ -35,11 +35,16 @@ class Tokenizer:
 
 
 class HuggingFaceBertTokenizer(Tokenizer):
-    def __init__(self, tokenizer: Optional[BertTokenizer] = None):
+    def __init__(
+        self,
+        tokenizer: Optional[BertTokenizer] = None,
+    ):
         self.tokenizer = tokenizer
 
     def __call__(self, x: str) -> tuple[Any, ...]:
-        return to_numpy(self.tokenizer(x).values())
+        return to_numpy(
+            self.tokenizer(x, padding="max_length", truncation=True).values()
+        )
 
     def encode(self, text: str) -> list[int]:
         return self.tokenizer.encode(text)

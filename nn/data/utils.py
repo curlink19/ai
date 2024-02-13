@@ -45,3 +45,14 @@ def to_device(device: torch.device, tensors: Any) -> Any:
             result.append(tensor.to(device))
         return result
     return tensors.to(device)
+
+
+def is_dataset(obj: Any) -> bool:
+    return hasattr(obj, "__getitem__") and hasattr(obj, "__len__")
+
+
+def is_iterable_dataset(obj: Any) -> bool:
+    return hasattr(
+        obj,
+        "__iter__",
+    )

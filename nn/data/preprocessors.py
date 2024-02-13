@@ -1,5 +1,8 @@
 from typing import Any
 import re
+import numpy as np
+
+from utils.utils import all_occurrences_generator
 
 
 class Preprocessor:
@@ -46,3 +49,36 @@ class RemoveHTML(Preprocessor):
 
     def __call__(self, x: str) -> str:
         return re.sub(self.pattern, "", x)
+
+
+class RemoveSymbols(Preprocessor):
+    def __init__(self, symbols: list[str]):
+        self.symbols = symbols
+
+    def __call__(self, x: str) -> str:
+        for symbol in self.symbols:
+            x = x.replace(symbol, "")
+        return x
+
+
+class AddPrefixWithProbability(Preprocessor):
+    def __init__(self, prefixes: list[str], prob: float):
+        self.prefixes = prefixes
+        self.prob = prob
+
+    def __call__(self, x: str) -> str:
+        if np.random.binomial(1, self.prob) == 0:
+            return x
+        return np.random.choice(self.prefixes) + x
+
+
+class ReplaceWithProbability(Preprocessor):
+    def __init__(self, replacements: list[tuple[str, str]], prob: float):
+        self.replacements = replacements
+        self.prob = prob
+
+    def __call__(self, x: str) -> str:
+        for replacement in self.replacements:
+            if np.random.binomial(1, self.prob) == 1:
+                x = x.replace(replacement[0], replacement[1])
+        return x

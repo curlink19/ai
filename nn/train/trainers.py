@@ -2,6 +2,7 @@ import torch
 from typing import Optional
 
 from nn.configs.train_configs import TrainConfig
+from nn.models.schedulers import Scheduler
 
 
 class Trainer:
@@ -36,7 +37,7 @@ class DefaultTrainer(Trainer):
         optimizer: torch.optim.Optimizer,
         loss_fn: torch.nn.Module,
         config: TrainConfig,
-        scheduler: Optional[torch.optim.lr_scheduler] = None,
+        scheduler: Optional[Scheduler] = None,
     ):
         """
         Default trainer with the ability to accumulate batches.
@@ -62,6 +63,9 @@ class DefaultTrainer(Trainer):
     def reset(self) -> None:
         self.optimizer.step()
         self.optimizer.zero_grad()
+
+        if self.scheduler is not None:
+            self.scheduler.step_after_optimizer()
 
     def step(self, predicted, target) -> float:
         self.current_step += 1
@@ -96,6 +100,6 @@ class DefaultTrainer(Trainer):
         self.current_step = 0
 
         if self.scheduler is not None:
-            self.scheduler.step()
+            self.scheduler.step_after_epoch()
 
         self.optimizer.zero_grad()

@@ -1,8 +1,10 @@
-from typing import Any
-import re
-import numpy as np
+from typing import Any, Union
 
-from utils.utils import all_occurrences_generator
+import re
+import pymorphy3
+from numpy.random import choice, randint
+
+from utils.utils import all_occurrences_generator, prob_flag
 
 
 class Preprocessor:
@@ -62,23 +64,90 @@ class RemoveSymbols(Preprocessor):
 
 
 class AddPrefixWithProbability(Preprocessor):
-    def __init__(self, prefixes: list[str], prob: float):
+    def __init__(
+        self,
+        prefixes: Union[list[str], list[list[str]]],
+        prob: float,
+        upper_prob: float = 0.5,
+    ):
+        if not isinstance(prefixes[0], list):
+            prefixes = [prefixes]
+
         self.prefixes = prefixes
         self.prob = prob
+        self.upper_prob = upper_prob
 
     def __call__(self, x: str) -> str:
-        if np.random.binomial(1, self.prob) == 0:
+        if not prob_flag(self.prob):
             return x
-        return np.random.choice(self.prefixes) + x
+
+        for current in reversed(self.prefixes):
+            x = choice(current) + x
+
+        if prob_flag(self.upper_prob):
+            x = x[0].upper() + x[1:]
+
+        return x
 
 
-class ReplaceWithProbability(Preprocessor):
-    def __init__(self, replacements: list[tuple[str, str]], prob: float):
-        self.replacements = replacements
+class ReplaceWithSynonymWithProbability(Preprocessor):
+    def __init__(self, synonyms: list[str], prob: float):
+        self.prob = prob
+        self.morph = pymorphy3.MorphAnalyzer()
+
+        self.cases = ["nomn", "gent", "datv", "accs", "ablt", "loct"]
+        self.nums = ["sing", "plur"]
+
+        self.synonyms = []
+        for x in synonyms:
+            word = self.morph.parse(x.lower())[0]
+            current = []
+
+            for case in self.cases:
+                for num in self.nums:
+                    current.append(" " + word.inflect({num, case}).word + " ")
+
+            self.synonyms.append(current)
+
+    def __call__(self, text: str) -> str:
+        result = ""
+        pos = 0
+
+        occurs = []
+        for i in range(len(self.synonyms)):
+            for j in range(len(self.synonyms[i])):
+                for k in all_occurrences_generator(text, self.synonyms[i][j]):
+                    occurs.append((i, j, k))
+
+        occurs = sorted(occurs, key=lambda x: x[-1])
+
+        for occur in occurs:
+            if occur[2] <= pos:
+                continue
+
+            result += text[pos : occur[2]]
+            _len_text_synonym = len(self.synonyms[occur[0]][occur[1]])
+
+            if prob_flag(self.prob):
+                result += self.synonyms[randint(0, len(self.synonyms))][occur[1]]
+            else:
+                result += text[occur[2] : occur[2] + _len_text_synonym]
+
+            pos = occur[2] + _len_text_synonym
+
+        result += text[pos : pos + len(text)]
+
+        return result
+
+
+class DeleteWithProbability(Preprocessor):
+    def __init__(self, sep: str, prob: float):
+        self.sep = sep
         self.prob = prob
 
     def __call__(self, x: str) -> str:
-        for replacement in self.replacements:
-            if np.random.binomial(1, self.prob) == 1:
-                x = x.replace(replacement[0], replacement[1])
-        return x
+        array = []
+        for elem in x.split(self.sep):
+            if not prob_flag(self.prob):
+                array.append(elem)
+        return self.sep.join(array)

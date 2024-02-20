@@ -33,6 +33,18 @@ class Tokenizer:
         """
         raise NotImplementedError
 
+    def set_max_length(self, max_length: int) -> None:
+        """
+        Sets max_length of tokenizer.
+        """
+        raise NotImplementedError
+
+    def get_max_length(self) -> int:
+        """
+        Returns max_length of tokenizer.
+        """
+        raise NotImplementedError
+
 
 class HuggingFaceBertTokenizer(Tokenizer):
     def __init__(
@@ -52,8 +64,14 @@ class HuggingFaceBertTokenizer(Tokenizer):
     def tokenize(self, x: str) -> list[str]:
         return self.tokenizer.tokenize(x)
 
-    def decode(self, tokens: list[int]) -> str:
-        return self.tokenizer.decode(tokens)
+    def decode(self, *args, **kwargs) -> str:
+        return self.tokenizer.decode(*args, **kwargs)
+
+    def set_max_length(self, max_length: int) -> None:
+        self.tokenizer.model_max_length = max_length
+
+    def get_max_length(self) -> int:
+        return self.tokenizer.model_max_length
 
     def from_pretrained(self, name: str) -> None:
         self.tokenizer = BertTokenizer.from_pretrained(name)

@@ -1,3 +1,7 @@
+import pandas as pd
+from tqdm import tqdm
+
+import datasets
 import torch
 from torch import nn
 from typing import Any, List, Tuple, Iterable, Union, Optional
@@ -15,14 +19,26 @@ from utils.utils import gc_after
 
 
 class ApplyFilter(IterableDataset):
-    def __init__(self, dataset: Dataset, filter: Filter):  # noqa normal name
+    def __init__(
+        self, dataset: Dataset, filter: Filter, logs=False
+    ):  # noqa normal name
         super(IterableDataset).__init__()
 
         self.dataset = dataset
         self.filter = filter
 
+        self.pbar = None
+        if logs:
+            self.pbar = tqdm(total=len(dataset))  # noqa must be implemented
+
     def __iter__(self):
-        return ApplyFilterIterator(dataset=self.dataset, filter=self.filter)
+        return ApplyFilterIterator(
+            dataset=self.dataset, filter=self.filter, pbar=self.pbar
+        )
+
+    def __del__(self):
+        if self.pbar is not None:
+            self.pbar.close()
 
 
 class ApplyLabeling(Dataset):
@@ -147,14 +163,37 @@ class MergedDataset(Dataset):
     def __getitem__(self, idx: int) -> Tuple[Any, ...]:
         return tuple(x[idx] for x in self.array)
 
+    def to_hf_dataset(self, label_names: list[str]) -> datasets.Dataset:
+        return datasets.Dataset.from_pandas(
+            pd.DataFrame(
+                data=[
+                    dict(
+                        [
+                            (label_names[j], self.array[j][i])
+                            for j in range(len(label_names))
+                        ]
+                    )
+                    for i in range(len(self))
+                ]
+            )
+        )
+
 
 class HuggingFaceDictDataset(Dataset):
     def __init__(
-        self, name: str, target_columns: Union[list[str], str], length: int = None
+        self,
+        name: str,
+        target_columns: Union[list[str], str],
+        token: Optional[str] = None,
+        length: Optional[int] = None,
     ):
         super(Dataset).__init__()
 
-        self.dataset = load_dataset(name, split="train")
+        if token is None:
+            self.dataset = load_dataset(name, split="train")
+        else:
+            self.dataset = load_dataset(name, split="train", token=token)
+
         self.target_columns = target_columns
 
         if length is not None:

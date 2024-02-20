@@ -97,9 +97,5 @@ class DefaultTrainer(Trainer):
             return loss.item() / self.batch_size
 
     def end_epoch(self) -> None:
-        self.current_step = 0
-
         if self.scheduler is not None:
             self.scheduler.step_after_epoch()
-
-        self.optimizer.zero_grad()

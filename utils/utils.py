@@ -98,3 +98,7 @@ def all_occurrences_generator(text: str, substr: str):
         if current != -1:
             yield current
             current += len(substr)
+
+
+def prob_flag(prob: float) -> bool:
+    return np.random.binomial(1, prob) == 1

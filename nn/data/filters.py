@@ -38,8 +38,6 @@ class LikelihoodThresholdFilter(Filter):
         if self.logits:
             x = softmax(x, dim=-1)
 
-        print(x)
-
         if self.cls == -1:
             return torch.max(x).item() > self.threshold
         return x[self.cls].item() > self.threshold

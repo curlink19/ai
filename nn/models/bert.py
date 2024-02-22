@@ -1,18 +1,10 @@
-"""
-All models should implement compute method for inference.
-
-HF - huggingface
-BFP - bert for pretraining
-BP - bert pretrained
-"""
-
 import torch
 from torch import nn, Tensor
 from transformers.models.bert import BertPreTrainedModel, BertModel
 
 
 class HuggingFaceBertForClassification(BertPreTrainedModel):
-    def __init__(self, bert: BertModel, num_labels=2):
+    def __init__(self, bert: BertModel, num_labels: int = 2):
         self.num_labels = num_labels
         self.config = bert.config
 

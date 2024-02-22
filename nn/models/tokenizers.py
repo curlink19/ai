@@ -1,5 +1,6 @@
 from typing import Any, Optional, Union
-from transformers.models.bert.tokenization_bert import BertTokenizer
+from transformers.tokenization_utils import PreTrainedTokenizer
+from transformers import AutoTokenizer
 
 from utils.utils import to_numpy
 
@@ -46,10 +47,10 @@ class Tokenizer:
         raise NotImplementedError
 
 
-class HuggingFaceBertTokenizer(Tokenizer):
+class HuggingFaceTokenizer(Tokenizer):
     def __init__(
         self,
-        tokenizer: Optional[BertTokenizer] = None,
+        tokenizer: Optional[PreTrainedTokenizer] = None,
     ):
         self.tokenizer = tokenizer
 
@@ -74,4 +75,4 @@ class HuggingFaceBertTokenizer(Tokenizer):
         return self.tokenizer.model_max_length
 
     def from_pretrained(self, name: str) -> None:
-        self.tokenizer = BertTokenizer.from_pretrained(name)
+        self.tokenizer = AutoTokenizer.from_pretrained(name)

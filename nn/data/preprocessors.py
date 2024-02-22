@@ -16,6 +16,11 @@ class Preprocessor:
         raise NotImplementedError
 
 
+class Lower(Preprocessor):
+    def __call__(self, x: str) -> str:
+        return x.lower()
+
+
 class RemoveEmojis(Preprocessor):
     def __init__(self):
         self.emojis = re.compile(
@@ -140,14 +145,53 @@ class ReplaceWithSynonymWithProbability(Preprocessor):
         return result
 
 
-class DeleteWithProbability(Preprocessor):
-    def __init__(self, sep: str, prob: float):
-        self.sep = sep
-        self.prob = prob
+class RiddleWithProbability(Preprocessor):
+    def __init__(
+        self,
+        separators: list[str],
+        join_separators: list[str],
+        min_length: int,
+        delete_prob: float,
+        replace_with_random_word_prob: float,
+        insert_prob: float,
+        random_words: list[str],
+        random_insertions: list[str],
+    ):
+        self.separators = separators
+        self.join_separators = join_separators
+        self.sep = "|".join(self.separators)
+        self.min_length = min_length
+        self.delete_prob = delete_prob
+        self.replace_with_random_word_prob = replace_with_random_word_prob
+        self.insert_prob = insert_prob
+        self.random_words = random_words
+        self.random_insertions = random_insertions
 
     def __call__(self, x: str) -> str:
         array = []
-        for elem in x.split(self.sep):
-            if not prob_flag(self.prob):
-                array.append(elem)
-        return self.sep.join(array)
+        words = re.split(self.sep, x)
+
+        if len(words) < self.min_length:
+            return x
+
+        for elem in words:
+            if prob_flag(self.insert_prob):
+                array.append(choice(self.random_insertions))
+
+            if prob_flag(self.delete_prob):
+                continue
+
+            if prob_flag(self.replace_with_random_word_prob):
+                array.append(choice(self.random_words))
+                continue
+
+            array.append(elem)
+
+        if prob_flag(self.insert_prob):
+            array.append(choice(self.random_insertions))
+
+        result = ""
+        for x in array:
+            result += x + choice(self.join_separators)
+
+        return result

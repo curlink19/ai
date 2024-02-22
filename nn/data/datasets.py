@@ -186,13 +186,17 @@ class HuggingFaceDictDataset(Dataset):
         target_columns: Union[list[str], str],
         token: Optional[str] = None,
         length: Optional[int] = None,
+        from_disk: bool = False,
     ):
         super(Dataset).__init__()
 
-        if token is None:
-            self.dataset = load_dataset(name, split="train")
+        if not from_disk:
+            if token is None:
+                self.dataset = load_dataset(name, split="train")
+            else:
+                self.dataset = load_dataset(name, split="train", token=token)
         else:
-            self.dataset = load_dataset(name, split="train", token=token)
+            self.dataset = datasets.load_from_disk(name)
 
         self.target_columns = target_columns
 
@@ -242,21 +246,57 @@ def merge_datasets(
     return ListDataset(array)
 
 
-def to_list_dataset(dataset: Union[IterableDataset, Dataset]) -> ListDataset:
+def to_list_dataset(
+    dataset: Union[IterableDataset, Dataset], logs=False
+) -> ListDataset:
     array = []
 
     if is_dataset(dataset):
-        for i in range(len(dataset)):  # noqa must be implemented
+        for i in (
+            tqdm(
+                range(len(dataset)),  # noqa must be implemented
+            )
+            if logs
+            else range(len(dataset))  # noqa must be implemented
+        ):
             array.append(dataset[i])
     else:
         assert is_iterable_dataset(dataset)
+        assert not logs, "not yet implemented"
+
         for x in dataset:
             array.append(x)
 
     return ListDataset(array)
 
 
-def spawn_clones(dataset: Union[IterableDataset, Dataset], times: int) -> ListDataset:
-    dataset = to_list_dataset(dataset)
-    dataset.array = dataset.array * times
-    return dataset
+def spawn_clones(
+    dataset: Union[IterableDataset, Dataset], times: int, iterate: bool = False
+) -> ListDataset:
+    if iterate:
+        result = ListDataset([])
+        for i in range(times):
+            result.array.extend(to_list_dataset(dataset, logs=True).array)
+    else:
+        result = to_list_dataset(dataset)
+        result.array = result.array * times
+    return result
+
+
+def push_to_hf(
+    dataset: datasets.Dataset,
+    name: str,
+    append=False,
+    token: str = None,
+):
+    if append:
+        dataset = datasets.concatenate_datasets(
+            [dataset, load_dataset(name, split="train", token=token)]
+        )
+    dataset.push_to_hub(name, token=token)
+
+
+def add_constant_label(dataset: Dataset, label: Any) -> MergedDataset:
+    return MergedDataset(
+        [dataset, ListDataset([label] * len(dataset))]  # noqa must be implemented
+    )

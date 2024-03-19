@@ -93,7 +93,7 @@ def train(
     train_step_logger = Logger(
         log_dir=config.log_dir,
         group="Loss/batch/train",
-        text_logs=True,
+        text_logs=config.text_logs,
         log_interval=config.log_interval,
         step_bias=0,
         reduction="mean",

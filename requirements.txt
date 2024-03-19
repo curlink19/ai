@@ -10,3 +10,9 @@ jsonlines
 gigachat
 matplotlib
 pymorphy3
+scipy
+bs4
+scikit-learn
+keras
+tensorflow
+tritonclient

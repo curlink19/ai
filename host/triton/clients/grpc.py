@@ -4,7 +4,7 @@ from functools import partial
 from typing import Optional, Union
 import tritonclient.grpc as grpcclient
 from tritonclient.utils import InferenceServerException
-from host.triton.clients.client import AsyncInferenceClient, AsyncResponse
+from host.triton.clients.clients import AsyncInferenceClient, AsyncResponse
 from utils.utils import pack
 
 

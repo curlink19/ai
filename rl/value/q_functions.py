@@ -1,5 +1,7 @@
+from typing import List
 import numpy as np
 from rl.environment.types import State, Action, Reward
+from rl.value.preprocessors import Preprocessor
 
 
 class QFunction:
@@ -38,3 +40,28 @@ class FiniteQFunction(FiniteActionsQFunction):
 
     def for_all_actions(self, state: int) -> np.ndarray:
         return self.array[state, :]
+
+
+class ApplyPreprocessors(QFunction):
+    def __init__(self, preprocessors: List[Preprocessor], q_function: QFunction):
+        self.preprocessors = preprocessors
+        self.q_function = q_function
+
+    def preprocess(self, state: State, action: Action):
+        result = (state, action)
+        for preprocessor in self.preprocessors:
+            result = preprocessor(*result)
+        return result
+
+    def __call__(self, state: State, action: Action):
+        state, action = self.preprocess(state, action)
+        return self.q_function(state, action)
+
+    def move(self, state: State, action: Action, value: Reward, lr: float):
+        state, action = self.preprocess(state, action)
+        self.q_function.move(state, action, value, lr)
+
+    def __getattr__(self, item):  # TODO
+        if item in dir(self.q_function):
+            return object.__getattribute__(self.q_function, item)
+        return object.__getattribute__(self, item)

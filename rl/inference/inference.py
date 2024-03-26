@@ -27,9 +27,12 @@ class Inference:
             action: Action = self.policy(state)
             next_state: State = self.transition_model(state, action)
             reward: Reward = self.reward_model(state, action, next_state)
-            transition: Transition = (state, action, reward, next_state)  # noqa typing
+            transition: Transition = Transition(
+                state=state, action=action, reward=reward, next_state=next_state
+            )
 
             trajectory.append(transition)
+            state = next_state
             stopper(transition)
 
         return trajectory

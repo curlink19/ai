@@ -12,11 +12,12 @@ class OnPolicyTDControl:
         self, q_function: QFunction, trajectory: Trajectory, lr: float, gamma: float
     ):
         for transition in trajectory:
-            state, action, reward, next_state = transition
             q_function.move(
-                state,
-                action,
-                reward + gamma * q_function(next_state, self.policy(next_state)),
+                transition.state,
+                transition.action,
+                transition.reward
+                + gamma
+                * q_function(transition.next_state, self.policy(transition.next_state)),
                 lr=lr,
             )
 
@@ -29,10 +30,9 @@ class OffPolicyTDControl:
         self, q_function: QFunction, trajectory: Trajectory, lr: float, gamma: float
     ):
         for transition in trajectory:
-            state, action, reward, next_state = transition
             q_function.move(
-                state,
-                action,
-                reward + gamma * self.value(next_state),
+                transition.state,
+                transition.action,
+                transition.reward + gamma * self.value(transition.next_state),
                 lr=lr,
             )

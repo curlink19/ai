@@ -33,7 +33,7 @@ class FiniteEnvironment(Environment):
     ):
         self.number_of_states = number_of_states
         self.number_of_actions = number_of_actions
-        self.initial_states = []
+        self.initial_states = initial_states
         self.initial_state_probs = initial_state_probs
 
     def get_initial_state(self):
